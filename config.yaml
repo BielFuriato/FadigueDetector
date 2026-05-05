@@ -32,10 +32,10 @@ scores:
     long_closure_weight: 12.0
     active_long_closure_min_score: 20.0
     blink_duration_enabled: true
-    blink_duration_reference_sec: 0.35
+    blink_duration_reference_sec: 0.25
     blink_duration_weight: 7.0
     pupil_movement_enabled: true
-    pupil_movement_reference: 0.12
+    pupil_movement_reference: 0.05
     pupil_movement_min_samples: 10
     pupil_movement_weight: 8.0
     head_tilt_weight: 5.0
@@ -57,8 +57,8 @@ scores:
 
 validation:
   classification:
-    warmup_sec: 10
-    low_vigilance_min_fatigue: 25
+    warmup_sec: 2
+    low_vigilance_min_fatigue: 31
     low_vigilance_min_duration_sec: 2
     drowsy_min_fatigue: 50
     drowsy_min_duration_sec: 2

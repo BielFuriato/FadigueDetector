@@ -137,23 +137,13 @@ def process_video(
             writer.writeheader()
 
             frame_id = 0
-            target_frame_index = 0
-            total_frames = int(camera.capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0) if camera.capture is not None else 0
             while True:
-                if frame_stride > 1 and camera.capture is not None:
-                    if total_frames > 0 and target_frame_index >= total_frames:
-                        break
-                    camera.capture.set(cv2.CAP_PROP_POS_FRAMES, target_frame_index)
-                    ok, frame = camera.read()
-                    if not ok:
-                        break
-                    frame_id = target_frame_index + 1
-                    target_frame_index += frame_stride
-                else:
-                    ok, frame = camera.read()
-                    if not ok:
-                        break
-                    frame_id += 1
+                ok, frame = camera.read()
+                if not ok:
+                    break
+                frame_id += 1
+                if frame_stride > 1 and (frame_id - 1) % frame_stride != 0:
+                    continue
 
                 timestamp_sec = (frame_id - 1) / max(nominal_fps, 1.0)
                 metrics = empty_metrics()
