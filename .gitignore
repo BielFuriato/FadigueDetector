@@ -33,3 +33,9 @@ data/**
 *.mkv
 *.MOV
 *.zip
+
+# Resultados experimentais versionados.
+!data/logs/
+!data/logs/**
+!data/validation/
+!data/validation/**
