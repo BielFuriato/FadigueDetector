@@ -2,7 +2,7 @@
 title: Driver Fatigue Detector
 sdk: gradio
 app_file: app.py
-python_version: 3.10
+python_version: "3.10"
 ---
 
 # Driver Fatigue Detector
