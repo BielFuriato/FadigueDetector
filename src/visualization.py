@@ -46,42 +46,47 @@ def draw_status_panel(
     alert,
     fps: float,
 ) -> np.ndarray:
-    """Desenha painel com metricas e estado final."""
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (12, 12), (430, 343), (20, 20, 20), -1)
-    cv2.addWeighted(overlay, 0.72, frame, 0.28, 0, frame)
-
+    """Compact HUD overlay — glanceable essentials only. Detailed metrics live in the side cards."""
     state_color = color_for_state(risk.final_state)
+
+    # -- Compact corner HUD box (top-left) --
     lines = [
-        ("EAR", f"{metrics.get('ear_avg', 0.0):.3f}"),
-        ("MAR", f"{metrics.get('mar', 0.0):.3f}"),
-        ("PERCLOS", f"{temporal.get('perclos', 0.0) * 100:.1f}%"),
-        ("Bocejos janela", str(temporal.get("yawn_count_window", 0))),
-        ("Piscada media", f"{temporal.get('avg_blink_duration', 0.0):.2f}s"),
-        ("Mov. pupila", f"{temporal.get('avg_pupil_movement', 0.0):.3f}"),
-        ("Fadiga", f"{risk.fatigue_score:.0f} ({risk.fatigue_level})"),
-        ("Distracao", f"{risk.distraction_score:.0f} ({risk.distraction_level})"),
         ("Estado", risk.final_state),
+        ("Fadiga", f"{risk.fatigue_score:.0f}"),
+        ("PERCLOS", f"{temporal.get('perclos', 0.0) * 100:.1f}%"),
         ("FPS", f"{fps:.1f}"),
     ]
 
-    y = 42
-    for label, value in lines:
-        color = state_color if label == "Estado" else (230, 230, 230)
-        cv2.putText(frame, f"{label}: {value}", (28, y), cv2.FONT_HERSHEY_SIMPLEX, 0.58, color, 2, cv2.LINE_AA)
-        y += 29
+    box_x, box_y = 8, 8
+    box_w, box_h = 186, 108
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (box_x, box_y), (box_x + box_w, box_y + box_h), (18, 18, 18), -1)
+    cv2.addWeighted(overlay, 0.68, frame, 0.32, 0, frame)
 
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.46
+    line_spacing = 23
+    text_x = box_x + 12
+    text_y = box_y + 24
+
+    for label, value in lines:
+        color = state_color if label == "Estado" else (220, 220, 220)
+        cv2.putText(frame, f"{label}: {value}", (text_x, text_y), font, font_scale, color, 1, cv2.LINE_AA)
+        text_y += line_spacing
+
+    # -- Slim alert strip (bottom, only when active) --
     if alert.message:
-        height, width = frame.shape[:2]
-        cv2.rectangle(frame, (0, height - 58), (width, height), state_color, -1)
+        h, w = frame.shape[:2]
+        bar_h = 28
+        cv2.rectangle(frame, (0, h - bar_h), (w, h), state_color, -1)
         cv2.putText(
             frame,
             alert.message,
-            (24, height - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.86,
+            (14, h - 9),
+            font,
+            0.48,
             (255, 255, 255),
-            2,
+            1,
             cv2.LINE_AA,
         )
 

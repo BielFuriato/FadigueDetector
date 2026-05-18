@@ -31,20 +31,8 @@ DEFAULT_SCORE_CONFIG = {
         "pupil_movement_weight": 8.0,
         "head_tilt_weight": 5.0,
     },
-    "distraction": {
-        "looking_side_ratio_reference": 0.35,
-        "looking_side_weight": 35.0,
-        "looking_down_ratio_reference": 0.30,
-        "looking_down_weight": 30.0,
-        "non_frontal_ratio_reference": 0.45,
-        "non_frontal_weight": 15.0,
-        "face_missing_weight": 35.0,
-    },
     "final_decision": {
         "fatigue_high_min": 61,
-        "distraction_high_min": 61,
-        "critical_fatigue_min": 81,
-        "critical_distraction_min": 81,
     },
 }
 
@@ -69,8 +57,6 @@ def _as_bool(value: Any) -> bool:
 class RiskResult:
     fatigue_score: float
     fatigue_level: str
-    distraction_score: float
-    distraction_level: str
     final_state: str
 
 
@@ -79,17 +65,13 @@ class RiskModel:
 
     def __init__(self, thresholds: dict[str, Any], score_config: dict[str, Any] | None = None) -> None:
         self.long_eye_closure_sec = float(thresholds.get("long_eye_closure_sec", 2.0))
-        self.face_missing_sec = float(thresholds.get("face_missing_sec", 3.0))
-        self.looking_side_sec = float(thresholds.get("looking_side_sec", 3.0))
-        self.looking_down_sec = float(thresholds.get("looking_down_sec", 3.0))
         self.score_config = score_config or {}
         self.levels = _section(self.score_config, "levels")
         self.fatigue = _section(self.score_config, "fatigue")
-        self.distraction = _section(self.score_config, "distraction")
         self.final_decision = _section(self.score_config, "final_decision")
 
     def evaluate(self, temporal: dict[str, Any], current_head_tilt_score: float) -> RiskResult:
-        """Calcula fadiga, distracao e estado final.
+        """Calcula fadiga e estado final.
 
         PERCLOS recebe maior peso por ser o indicador ocular temporal principal.
         Bocejos, fechamentos prolongados e cabeca inclinada entram como reforcos.
@@ -141,43 +123,12 @@ class RiskModel:
             + head_score
         )
 
-        looking_side_ratio = float(temporal.get("looking_side_ratio", 0.0))
-        looking_down_ratio = float(temporal.get("looking_down_ratio", 0.0))
-        non_frontal_ratio = float(temporal.get("non_frontal_ratio", 0.0))
-        face_missing_duration = float(temporal.get("face_missing_duration", 0.0))
-        looking_side_duration = float(temporal.get("looking_side_duration", 0.0))
-        looking_down_duration = float(temporal.get("looking_down_duration", 0.0))
-
-        side_score = max(
-            min(looking_side_ratio / _safe_reference(self.distraction["looking_side_ratio_reference"]), 1.0)
-            * float(self.distraction["looking_side_weight"]),
-            min(looking_side_duration / max(self.looking_side_sec, 1.0), 1.0)
-            * float(self.distraction["looking_side_weight"]),
-        )
-        down_score = max(
-            min(looking_down_ratio / _safe_reference(self.distraction["looking_down_ratio_reference"]), 1.0)
-            * float(self.distraction["looking_down_weight"]),
-            min(looking_down_duration / max(self.looking_down_sec, 1.0), 1.0)
-            * float(self.distraction["looking_down_weight"]),
-        )
-        frontal_score = min(non_frontal_ratio / _safe_reference(self.distraction["non_frontal_ratio_reference"]), 1.0) * float(
-            self.distraction["non_frontal_weight"]
-        )
-        missing_score = min(face_missing_duration / max(self.face_missing_sec, 1.0), 1.0) * float(
-            self.distraction["face_missing_weight"]
-        )
-
-        distraction_score = clamp(side_score + down_score + frontal_score + missing_score)
-
         fatigue_level = self._level_from_score(fatigue_score)
-        distraction_level = self._level_from_score(distraction_score)
-        final_state = self._final_state(fatigue_score, distraction_score)
+        final_state = self._final_state(fatigue_score)
 
         return RiskResult(
             fatigue_score=fatigue_score,
             fatigue_level=fatigue_level,
-            distraction_score=distraction_score,
-            distraction_level=distraction_level,
             final_state=final_state,
         )
 
@@ -190,21 +141,10 @@ class RiskModel:
             return "RISCO_MODERADO"
         return "RISCO_ALTO"
 
-    def _final_state(self, fatigue_score: float, distraction_score: float) -> str:
+    def _final_state(self, fatigue_score: float) -> str:
         fatigue_high = fatigue_score >= float(self.final_decision["fatigue_high_min"])
-        distraction_high = distraction_score >= float(self.final_decision["distraction_high_min"])
-
-        if (
-            fatigue_score >= float(self.final_decision["critical_fatigue_min"])
-            and distraction_score >= float(self.final_decision["critical_distraction_min"])
-        ):
-            return "Risco critico"
-        if fatigue_high and distraction_high:
-            return "Risco critico"
         if fatigue_high:
             return "Risco por fadiga"
-        if distraction_high:
-            return "Risco por distracao"
-        if fatigue_score >= float(self.levels["attention_min"]) or distraction_score >= float(self.levels["attention_min"]):
+        if fatigue_score >= float(self.levels["attention_min"]):
             return "Atencao"
         return "Normal"

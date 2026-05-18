@@ -19,6 +19,9 @@ data/**
 !data/
 !data/logs/
 !data/logs/.gitkeep
+!data/models/
+!data/models/.gitkeep
+!data/models/*.task
 !data/samples/
 !data/samples/.gitkeep
 
@@ -33,9 +36,9 @@ data/**
 *.mkv
 *.MOV
 *.zip
-
-# Resultados experimentais versionados.
-!data/logs/
-!data/logs/**
-!data/validation/
-!data/validation/**
+!data/samples/*.avi
+!data/samples/*.mp4
+!data/samples/*.mov
+!data/samples/*.mkv
+!data/samples/*.MOV
+!data/samples/*.webm

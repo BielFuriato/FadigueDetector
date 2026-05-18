@@ -32,7 +32,6 @@ LOG_COLUMNS = [
     "looking_down",
     "looking_side",
     "fatigue_score",
-    "distraction_score",
     "final_state",
     "alert_message",
     "fps",

@@ -1,1 +1,1 @@
-"""Driver fatigue and distraction detector package."""
+"""Driver fatigue detector package."""

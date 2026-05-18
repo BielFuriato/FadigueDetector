@@ -196,8 +196,6 @@ def process_video(
                     {
                         **metrics,
                         "long_eye_closure_sec": float(thresholds.get("long_eye_closure_sec", 2.0)),
-                        "looking_side_sec": float(thresholds.get("looking_side_sec", 3.0)),
-                        "looking_down_sec": float(thresholds.get("looking_down_sec", 3.0)),
                         "yawn_detected_recently": yawn_detected_recently,
                     },
                 )
@@ -223,7 +221,6 @@ def process_video(
                         "looking_down": metrics["looking_down"],
                         "looking_side": metrics["looking_side"],
                         "fatigue_score": risk.fatigue_score,
-                        "distraction_score": risk.distraction_score,
                         "final_state": risk.final_state,
                         "alert_message": alert.message,
                     }

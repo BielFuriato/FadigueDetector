@@ -9,9 +9,6 @@ thresholds:
   mar_open: 0.5
   yawn_min_duration_sec: 1.0
   long_eye_closure_sec: 1.7
-  face_missing_sec: 3.0
-  looking_side_sec: 3.0
-  looking_down_sec: 3.0
 
 temporal:
   yawn_window_sec: 120
@@ -40,20 +37,8 @@ scores:
     pupil_movement_weight: 8.0
     head_tilt_weight: 5.0
 
-  distraction:
-    looking_side_ratio_reference: 0.35
-    looking_side_weight: 35.0
-    looking_down_ratio_reference: 0.30
-    looking_down_weight: 30.0
-    non_frontal_ratio_reference: 0.45
-    non_frontal_weight: 15.0
-    face_missing_weight: 35.0
-
   final_decision:
     fatigue_high_min: 61
-    distraction_high_min: 61
-    critical_fatigue_min: 81
-    critical_distraction_min: 81
 
 validation:
   classification:
@@ -67,11 +52,7 @@ validation:
     early_drowsiness_min_fatigue: 25
     drowsiness_min_fatigue: 50
     microsleep_min_perclos: 0.25
-    distraction_event_min_score: 31
     no_face_max_valid_face_ratio: 0.75
-
-  false_positive:
-    strong_distraction_min: 81
 
 alerts:
   sound_enabled: true

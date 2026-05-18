@@ -1,6 +1,6 @@
 # Validacao com Videos Locais
 
-Este modulo permite validar o pipeline atual do projeto com videos classificados manualmente em pastas. Ele nao baixa datasets, nao usa Kaggle API, nao treina redes neurais e nao altera o modelo principal. A ideia e medir como as regras atuais baseadas em OpenCV, MediaPipe, EAR, MAR, PERCLOS e scores temporais se comportam em videos de fadiga, baixa vigilancia, bocejo, microssono e distracao.
+Este modulo permite validar o pipeline atual do projeto com videos classificados manualmente em pastas. Ele nao baixa datasets, nao usa Kaggle API, nao treina redes neurais e nao altera o modelo principal. A ideia e medir como as regras atuais baseadas em OpenCV, MediaPipe, EAR, MAR, PERCLOS e scores temporais se comportam em videos de fadiga, baixa vigilancia, bocejo e microssono.
 
 ## Estrutura Esperada
 

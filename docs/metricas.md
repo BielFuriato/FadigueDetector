@@ -37,10 +37,6 @@ Combina PERCLOS, bocejos, fechamento ocular prolongado, duracao media de fechame
 - 61 a 80: RISCO_MODERADO
 - 81 a 100: RISCO_ALTO
 
-## Score de Distracao
-
-Combina tempo olhando para os lados, tempo olhando para baixo, ausencia de face e rosto fora de posicao frontal. A classificacao usa a mesma escala de 0 a 100.
-
 ## KSS
 
 Karolinska Sleepiness Scale e uma escala subjetiva de sonolencia de 1 a 9. Neste projeto, ela serve apenas para comparacao experimental com os scores calculados.

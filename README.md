@@ -1,12 +1,19 @@
-# Driver Fatigue Distraction Detector
+---
+title: Driver Fatigue Detector
+sdk: gradio
+app_file: app.py
+python_version: 3.10
+---
 
-Protótipo acadêmico em Python para detectar sinais visuais de fadiga e distração em motoristas usando webcam, OpenCV, MediaPipe Face Mesh e regras temporais. O sistema calcula EAR, MAR, PERCLOS, score de fadiga, score de distração, emite alertas visuais/sonoros opcionais e salva logs CSV para análise experimental.
+# Driver Fatigue Detector
+
+Protótipo acadêmico em Python para detectar sinais visuais de fadiga em motoristas usando webcam, OpenCV, MediaPipe Face Mesh e regras temporais. O sistema calcula EAR, MAR, PERCLOS, score de fadiga, emite alertas visuais/sonoros opcionais e salva logs CSV para análise experimental.
 
 > Este projeto não é diagnóstico médico, não substitui avaliação clínica e não deve ser usado como produto de segurança veicular em produção.
 
 ## Objetivo Acadêmico
 
-O objetivo é criar uma base funcional e modular para experimentos sobre sonolência e distração. A solução não treina deep learning do zero; ela usa landmarks faciais do MediaPipe e regras temporais inspiradas em métricas comuns de vigilância, como PERCLOS e duração de fechamento ocular.
+O objetivo é criar uma base funcional e modular para experimentos sobre sonolência. A solução não treina deep learning do zero; ela usa landmarks faciais do MediaPipe e regras temporais inspiradas em métricas comuns de vigilância, como PERCLOS e duração de fechamento ocular.
 
 ## Arquitetura
 
@@ -17,6 +24,7 @@ driver-fatigue-distraction-detector/
 ├── src/
 │   ├── camera.py
 │   ├── face_landmarks.py
+│   ├── session_processor.py
 │   ├── metrics.py
 │   ├── temporal_buffer.py
 │   ├── risk_model.py
@@ -32,6 +40,8 @@ driver-fatigue-distraction-detector/
 └── docs/
 ```
 
+`src/session_processor.py` concentra o processamento por frame. Cada instancia de `FatigueSessionProcessor` possui seu proprio detector, buffer temporal, modelo de risco e gerenciador de alertas, permitindo reuso tanto no fluxo local OpenCV quanto no app web sem compartilhar estado entre sessoes.
+
 ## Métricas
 
 **EAR** mede a abertura dos olhos. Quando o EAR médio fica abaixo do limiar configurado, o frame é marcado como olho fechado.
@@ -41,8 +51,6 @@ driver-fatigue-distraction-detector/
 **PERCLOS** é a proporção de frames válidos com olhos fechados na janela temporal. O cálculo usa apenas frames em que a face foi detectada.
 
 **Score de Fadiga** combina PERCLOS, bocejos, fechamentos prolongados, duração média de fechamento ocular e inclinação da cabeça.
-
-**Score de Distração** considera tempo olhando para lado, tempo olhando para baixo, ausência de face e rosto fora da posição frontal.
 
 **KSS** é uma escala subjetiva de sonolência de 1 a 9, usada aqui apenas para comparação experimental.
 
@@ -70,29 +78,50 @@ source .venv/bin/activate
 Com webcam padrão:
 
 ```bash
-python main.py
+python3 main.py
 ```
 
 Com arquivo de vídeo:
 
 ```bash
-python main.py --source caminho/video.mp4
+python3 main.py --source caminho/video.mp4
 ```
 
 Com outro arquivo de configuração:
 
 ```bash
-python main.py --config config.yaml
+python3 main.py --config config.yaml
 ```
 
 Sem som ou sem log:
 
 ```bash
-python main.py --no-sound
-python main.py --no-log
+python3 main.py --no-sound
+python3 main.py --no-log
 ```
 
 Pressione `Q` na janela do OpenCV para encerrar.
+
+## App Web com Gradio e FastRTC
+
+O app para Hugging Face Spaces fica em `app.py` e possui duas abas:
+
+- **Video Upload / Samples**: processa um video completo, usa `frame_index / fps` como timestamp e retorna resumo estruturado e video anotado quando a gravacao MP4 estiver disponivel.
+- **Live Webcam**: usa FastRTC/WebRTC no navegador, processa frames em tempo real com timestamp de relogio e atualiza metricas durante a transmissao.
+
+Execute localmente:
+
+```bash
+python3 app.py
+```
+
+Abra o endereco exibido pelo Gradio, normalmente `http://127.0.0.1:7860`.
+
+Os exemplos sao carregados automaticamente de `data/samples/`. Para a versao de demonstracao, mantenha tres videos nessa pasta com extensoes como `.mp4`, `.mov`, `.avi`, `.mkv` ou `.webm`.
+
+Em Hugging Face Spaces, o WebRTC pode precisar de credenciais TURN para funcionar fora de redes locais. O app tenta usar as credenciais suportadas pelo FastRTC quando `HF_TOKEN` ou variaveis Cloudflare TURN estao presentes. Sem TURN, a aba de webcam pode funcionar localmente e falhar em alguns ambientes hospedados.
+
+Com versoes recentes do `mediapipe`, o projeto usa a API `MediaPipe Tasks` e precisa do arquivo `face_landmarker.task`. Na primeira analise, o app tenta baixar automaticamente o modelo oficial para `data/models/face_landmarker.task`. Se o ambiente nao tiver acesso de rede, baixe o modelo manualmente de `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task` e salve nesse caminho, ou defina `MEDIAPIPE_FACE_LANDMARKER_MODEL` apontando para o arquivo.
 
 ## Experimentos
 
@@ -130,7 +159,6 @@ thresholds:
   mar_open: 0.55
   yawn_min_duration_sec: 1.0
   long_eye_closure_sec: 2.0
-  face_missing_sec: 3.0
 ```
 
 O bloco `scores` controla pesos, referencias e niveis de classificacao sem editar codigo:
@@ -181,7 +209,6 @@ Cada execução cria um CSV em `data/logs/` com colunas como:
 - `yawn_count_window`
 - `long_eye_closure_count`
 - `fatigue_score`
-- `distraction_score`
 - `final_state`
 - `alert_message`
 - `fps`
@@ -197,6 +224,8 @@ Os gráficos da análise também são salvos em `data/logs/`.
 - EAR e MAR variam entre pessoas e podem exigir calibração.
 - Não é diagnóstico médico.
 - É um protótipo acadêmico, não um produto automotivo certificado.
+- A geração de video anotado no app web depende de codecs disponiveis no ambiente. Se o MP4 nao puder ser criado, a analise textual ainda e retornada.
+- A aba de webcam depende de WebRTC/FastRTC e pode exigir configuracao TURN em deploy hospedado.
 
 ## Próximos Passos
 

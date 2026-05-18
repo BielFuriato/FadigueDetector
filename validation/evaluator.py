@@ -20,8 +20,6 @@ SUMMARY_COLUMNS = [
     "max_perclos",
     "mean_fatigue_score",
     "max_fatigue_score",
-    "mean_distraction_score",
-    "max_distraction_score",
     "first_attention_time_sec",
     "first_moderate_risk_time_sec",
     "first_high_risk_time_sec",
@@ -59,7 +57,6 @@ FRAME_COLUMNS = [
     "looking_down",
     "looking_side",
     "fatigue_score",
-    "distraction_score",
     "final_state",
     "alert_message",
 ]
@@ -77,13 +74,11 @@ DEFAULT_VALIDATION_CONFIG = {
         "early_drowsiness_min_fatigue": 31,
         "drowsiness_min_fatigue": 55,
         "microsleep_min_perclos": 0.25,
-        "distraction_event_min_score": 31,
         "no_face_max_valid_face_ratio": 0.75,
         "none_max_fatigue_below": 31,
     },
     "false_positive": {
         "strong_fatigue_min": 31,
-        "strong_distraction_min": 81,
     },
 }
 
@@ -199,7 +194,6 @@ def evaluate_expected_event(
     expected_event = str(row.get("expected_event", "none")).lower()
     expected_class = str(row.get("expected_class", "")).lower()
     max_fatigue = float(metrics["max_fatigue_score"])
-    max_distraction = float(metrics["max_distraction_score"])
     detected_yawns = int(metrics["detected_yawns"])
     detected_long_closures = int(metrics["detected_long_eye_closures"])
     max_perclos = float(metrics["max_perclos"])
@@ -216,21 +210,11 @@ def evaluate_expected_event(
         return predicted_class in {"low_vigilance", "drowsy"}
     if expected_event == "drowsiness":
         return predicted_class == "drowsy"
-    if expected_event == "looking_down":
-        return max_distraction >= float(event_config["distraction_event_min_score"])
-    if expected_event == "looking_side":
-        return max_distraction >= float(event_config["distraction_event_min_score"])
-    if expected_event == "no_face":
-        return (
-            max_distraction >= float(event_config["distraction_event_min_score"])
-            and float(metrics["valid_face_ratio"]) < float(event_config["no_face_max_valid_face_ratio"])
-        )
+    if expected_event in {"looking_down", "looking_side", "no_face"}:
+        return False
     if expected_event in {"none", "talking"} or expected_class in {"alert", "normal"}:
         return predicted_class == "alert"
-    return (
-        max_fatigue >= float(event_config["early_drowsiness_min_fatigue"])
-        or max_distraction >= float(event_config["distraction_event_min_score"])
-    )
+    return max_fatigue >= float(event_config["early_drowsiness_min_fatigue"])
 
 
 def preventive_detection(
@@ -257,16 +241,12 @@ def is_false_positive(
 ) -> bool:
     expected_class = str(row.get("expected_class", "")).lower()
     expected_event = str(row.get("expected_event", "")).lower()
-    max_distraction = float(metrics["max_distraction_score"])
     detected_yawns = int(metrics["detected_yawns"])
 
     benign = expected_class in {"alert", "normal"} and expected_event in {"none", "talking"}
     if not benign:
         return False
-    false_positive_config = _section(validation_config, "false_positive")
-    return predicted_class != "alert" or max_distraction >= float(false_positive_config["strong_distraction_min"]) or (
-        expected_event == "talking" and detected_yawns > 0
-    )
+    return predicted_class != "alert" or (expected_event == "talking" and detected_yawns > 0)
 
 
 def summarize_video(
@@ -298,17 +278,9 @@ def summarize_video(
         "max_perclos": float(df["perclos"].max()),
         "mean_fatigue_score": float(df["fatigue_score"].mean()),
         "max_fatigue_score": float(df["fatigue_score"].max()),
-        "mean_distraction_score": float(df["distraction_score"].mean()),
-        "max_distraction_score": float(df["distraction_score"].max()),
-        "first_attention_time_sec": first_time(
-            df, lambda data: (data["fatigue_score"] >= attention_min) | (data["distraction_score"] >= attention_min)
-        ),
-        "first_moderate_risk_time_sec": first_time(
-            df, lambda data: (data["fatigue_score"] >= moderate_min) | (data["distraction_score"] >= moderate_min)
-        ),
-        "first_high_risk_time_sec": first_time(
-            df, lambda data: (data["fatigue_score"] >= high_min) | (data["distraction_score"] >= high_min)
-        ),
+        "first_attention_time_sec": first_time(df, lambda data: data["fatigue_score"] >= attention_min),
+        "first_moderate_risk_time_sec": first_time(df, lambda data: data["fatigue_score"] >= moderate_min),
+        "first_high_risk_time_sec": first_time(df, lambda data: data["fatigue_score"] >= high_min),
         "first_alert_time_sec": first_time(df, lambda data: data["alert_message"].fillna("").astype(str).ne("")),
         "first_low_vigilance_time_sec": low_start,
         "first_drowsiness_time_sec": drowsy_start,

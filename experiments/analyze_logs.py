@@ -46,8 +46,6 @@ def main() -> int:
         "perclos_maximo": float(df["perclos"].max()),
         "fadiga_media": float(df["fatigue_score"].mean()),
         "fadiga_maxima": float(df["fatigue_score"].max()),
-        "distracao_media": float(df["distraction_score"].mean()),
-        "distracao_maxima": float(df["distraction_score"].max()),
         "quantidade_alertas": int(alert_count),
         "quantidade_bocejos": yawn_count,
         "tempo_total_em_risco_sec": total_risk_sec,
@@ -65,7 +63,6 @@ def main() -> int:
     plots = [
         ("perclos", "PERCLOS ao longo do tempo", "perclos"),
         ("fatigue_score", "Score de fadiga ao longo do tempo", "fatigue_score"),
-        ("distraction_score", "Score de distracao ao longo do tempo", "distraction_score"),
     ]
 
     for column, title, filename_part in plots:

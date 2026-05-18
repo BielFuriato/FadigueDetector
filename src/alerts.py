@@ -26,26 +26,14 @@ class AlertManager:
         message = ""
         level = "NORMAL"
 
-        if risk_result.final_state == "Risco critico":
-            message = "Risco critico: fadiga e distracao"
-            level = "RISCO_ALTO"
-        elif temporal.get("current_eye_closure_duration", 0.0) >= current.get("long_eye_closure_sec", 2.0):
+        if temporal.get("current_eye_closure_duration", 0.0) >= current.get("long_eye_closure_sec", 2.0):
             message = "Risco: olhos fechados por tempo prolongado"
             level = "RISCO_ALTO"
         elif risk_result.final_state == "Risco por fadiga":
             message = "Atencao: sinais de sonolencia"
             level = risk_result.fatigue_level
-        elif risk_result.final_state == "Risco por distracao":
-            message = "Atencao: foco visual fora da direcao"
-            level = risk_result.distraction_level
         elif current.get("yawn_detected_recently"):
             message = "Atencao: bocejo detectado"
-            level = "ATENCAO"
-        elif temporal.get("looking_side_duration", 0.0) >= current.get("looking_side_sec", 3.0):
-            message = "Atencao: foco visual fora da direcao"
-            level = "ATENCAO"
-        elif temporal.get("looking_down_duration", 0.0) >= current.get("looking_down_sec", 3.0):
-            message = "Atencao: foco visual fora da direcao"
             level = "ATENCAO"
         elif current.get("head_tilt_score", 0.0) > 65:
             message = "Atencao: cabeca inclinada"
